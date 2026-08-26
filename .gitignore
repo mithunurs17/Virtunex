@@ -1,0 +1,19 @@
+# Node/Next.js
+node_modules/
+.next/
+.out/
+.vercel/
+.turbo/
+.env*
+.env.*
+.env.local
+.env*.local
+.DS_Store
+*.log
+.eslintcache
+.cache/
+coverage/
+
+# Editor
+.vscode/
+.idea/
