@@ -76,7 +76,7 @@ export default function SignupPage() {
   return (
     <main className="min-h-screen bg-background text-text flex items-center justify-center px-6 py-8">
       <section className="w-full max-w-md border border-border bg-surface p-8 shadow-2xl rounded-2xl">
-        <Image src="/virtunex.png" alt="Virtunex" width={56} height={56} className="mb-6" />
+        <Image src="/virtunex.png" alt="Virtunex" width={56} height={56} unoptimized className="mb-6" />
         <p className="text-accent-light text-sm tracking-[0.2em] uppercase">Virtunex</p>
         <h1 className="mt-3 text-4xl font-light">Join Us</h1>
         <p className="mt-4 text-muted text-sm">Create your account to start your internship journey</p>

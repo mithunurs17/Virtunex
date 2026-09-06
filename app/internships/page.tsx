@@ -85,7 +85,7 @@ export default function InternshipsPage() {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 text-center">
           <div className="mx-auto mb-3 inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/80 backdrop-blur-md border border-white/30 shadow-lg overflow-hidden">
-            <Image src="/virtunex.png" alt="Virtunex" width={44} height={44} className="object-contain p-1.5" />
+            <Image src="/virtunex.png" alt="Virtunex" width={44} height={44} unoptimized className="object-contain p-1.5" />
           </div>
         
           <h1 className="text-5xl md:text-6xl font-light text-slate-900 mb-4 tracking-tight">

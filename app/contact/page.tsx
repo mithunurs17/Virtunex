@@ -29,6 +29,7 @@ export default function ContactPage() {
               <span className="inline-flex items-baseline gap-2 align-baseline">
                 <Image
                   src="/virtunex.png"
+                  unoptimized
                   alt="Virtunex logo"
                   width={96}
                   height={96}

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import { dbConnect } from '@/lib/db';
 import { EnrollmentModel } from '@/models/Enrollment';
 import { BatchModel } from '@/models/Batch';
+import { InternshipProgramModel } from '@/models/InternshipProgram';
 import { requireAdmin, requireAuth, toErrorResponse } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
@@ -37,14 +39,29 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    await requireAuth();
+    const user = await requireAuth();
     await dbConnect();
     const body = await req.json();
 
+    const programId = typeof body.programId === 'string' && mongoose.isValidObjectId(body.programId)
+      ? body.programId
+      : (await InternshipProgramModel.findOne({ active: true }).sort({ createdAt: 1 }).select('_id').lean())?._id;
+
+    if (!programId) {
+      return NextResponse.json({ error: 'No active internship program is available' }, { status: 400 });
+    }
+
+    const batchId = typeof body.batchId === 'string' && mongoose.isValidObjectId(body.batchId)
+      ? body.batchId
+      : undefined;
+    const branchId = typeof body.branchId === 'string' && mongoose.isValidObjectId(body.branchId)
+      ? body.branchId
+      : undefined;
+
     // Check if student already enrolled in this program
     const existing = await EnrollmentModel.findOne({
-      studentId: body.studentId,
-      programId: body.programId,
+      studentId: user._id,
+      programId,
     });
 
     if (existing) {
@@ -52,12 +69,12 @@ export async function POST(req: NextRequest) {
     }
 
     const enrollment = await EnrollmentModel.create({
-      studentId: body.studentId,
-      programId: body.programId,
-      batchId: body.batchId || null,
-      branchId: body.branchId || null,
+      studentId: user._id,
+      programId,
+      ...(batchId ? { batchId } : {}),
+      ...(branchId ? { branchId } : {}),
       status: 'APPLIED',
-      paymentStatus: 'pending',
+      paymentStatus: body.payment === 'partial' || body.payment === 'full' ? body.payment : 'pending',
       enrollmentDate: new Date(),
       completionPercentage: 0,
       internshipReadinessScore: 0,

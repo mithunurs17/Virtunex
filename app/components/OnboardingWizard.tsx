@@ -6,20 +6,12 @@ import Link from 'next/link';
 
 type PaymentChoice = 'partial' | 'full' | null;
 
-interface Batch {
-  id: string;
-  label: string;
-  timeWindow: string;
-  capacity: number;
-  enrolled: number;
-}
-
 interface ApiBatch {
   _id: string;
   name: string;
-  status: 'available' | 'expired';
+  status: string;
   capacity: number;
-  enrolled: number;
+  enrolledCount?: number;
   schedule?: string;
 }
 
@@ -29,13 +21,6 @@ const dummyProjects = [
   { id: 'cloud-automation', title: 'Cloud Infra Automation' },
   { id: 'ai-support-bot', title: 'AI Support Bot' },
   { id: 'undecided', title: 'Not yet decided' },
-];
-
-const dummyBatches: Batch[] = [
-  { id: 'batch-a', label: 'Batch A', timeWindow: 'Mon–Fri, 7–9 PM IST', capacity: 30, enrolled: 18 },
-  { id: 'batch-b', label: 'Batch B', timeWindow: 'Sat–Sun, 10 AM–1 PM IST', capacity: 25, enrolled: 22 },
-  { id: 'batch-c', label: 'Batch C', timeWindow: 'Sat–Sun, 4–7 PM IST', capacity: 20, enrolled: 11 },
-  { id: 'batch-d', label: 'Batch D', timeWindow: 'Mon–Fri, 6–8 AM IST', capacity: 15, enrolled: 9 },
 ];
 
 export default function OnboardingWizard() {
@@ -86,7 +71,7 @@ export default function OnboardingWizard() {
   const canGoNext = useMemo(() => {
     if (step === 1) return Boolean(fullName && college && yop && isWhatsappValid && emailVerified && branchId);
     if (step === 2) return Boolean(projectId);
-    if (step === 3) return Boolean(selectedBatchId);
+    if (step === 3) return Boolean(selectedBatchId) || availableBatchesFromApi.length === 0;
     if (step === 4) return Boolean(payment);
     return true;
   }, [step, fullName, college, yop, isWhatsappValid, emailVerified, branchId, projectId, selectedBatchId, payment]);
@@ -222,7 +207,7 @@ export default function OnboardingWizard() {
       .then((d) => {
       if (d?.error) throw new Error(d.error);
         const list: ApiBatch[] = Array.isArray(d?.result) ? d.result : [];
-        const onlyAvailable = list.filter((b) => (b.status || 'available') === 'available');
+        const onlyAvailable = list.filter((b) => ['UPCOMING', 'ACTIVE', 'available'].includes(b.status || 'available'));
         setAvailableBatchesFromApi(onlyAvailable);
       })
       .catch(() => setDataError('Registration data is unavailable. Configure MONGODB_URI on the server, then refresh this page.'));
@@ -242,7 +227,7 @@ export default function OnboardingWizard() {
         yop,
         branchId,
         projectId,
-        batchId: selectedBatchId,
+        batchId: selectedBatchId && /^[a-f\d]{24}$/i.test(selectedBatchId) ? selectedBatchId : undefined,
         payment,
       } as const;
       // First check if enrollment already exists (race-safe optimistic check)
@@ -406,9 +391,9 @@ export default function OnboardingWizard() {
                   label: b.name,
                   timeWindow: b.schedule || '—',
                   capacity: b.capacity || 0,
-                  enrolled: b.enrolled || 0,
+                  enrolled: b.enrolledCount || 0,
                 }))
-              : dummyBatches
+              : []
             ).map((b) => {
               const remaining = Math.max(0, (b.capacity || 0) - (b.enrolled || 0));
               const isSelected = selectedBatchId === b.id;
@@ -452,6 +437,11 @@ export default function OnboardingWizard() {
               );
             })}
           </div>
+          {!availableBatchesFromApi.length && (
+            <p className="mt-4 rounded-2xl border border-slate-200 bg-white/70 p-4 text-sm text-slate-600">
+              No batches are configured yet. You can submit your application and the team will assign a batch after review.
+            </p>
+          )}
         </div>
       )}
 

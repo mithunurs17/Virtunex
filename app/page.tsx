@@ -40,6 +40,7 @@ export default function Home() {
                       alt="Virtunex logo"
                       width={96}
                       height={96}
+                      unoptimized
                       className="inline-block object-contain align-baseline"
                       style={{ height: '1em', width: 'auto' }}
                     />

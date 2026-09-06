@@ -12,7 +12,7 @@ export default function Footer() {
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
               <div className="relative w-10 h-10 rounded-2xl overflow-hidden shadow-lg border border-white/30 bg-white/80 backdrop-blur-md">
-                <Image src="/virtunex.png" alt="Virtunex" fill className="object-contain p-1.5" />
+                <Image src="/virtunex.png" alt="Virtunex" fill unoptimized className="object-contain p-1.5" />
               </div>
               <span className="text-2xl font-light text-white">Virtunex</span>
             </div>
