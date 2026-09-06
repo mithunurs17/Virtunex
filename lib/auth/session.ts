@@ -1,27 +1,45 @@
-import { auth0 } from '@/lib/auth0';
-import { dbConnect } from '@/lib/db';
-import { UserModel, type User } from '@/models/User';
-import { StudentProfileModel } from '@/models/StudentProfile';
+import { cookies } from 'next/headers';
 
-export async function getOrCreateAppUser(): Promise<User | null> {
-  const session = await auth0.getSession();
-  if (!session?.user?.sub) return null;
-  await dbConnect();
-  const claims = session.user as Record<string, unknown>;
-  const auth0Id = String(claims.sub);
-  const email = String(claims.email || '').trim().toLowerCase();
-  if (!email) throw new Error('Authenticated Auth0 user has no email claim');
-  const fields = {
-    email, emailVerified: Boolean(claims.email_verified), profileImage: String(claims.picture || ''),
-    firstName: String(claims.given_name || ''), lastName: String(claims.family_name || ''), fullName: String(claims.name || claims.given_name || ''), lastLoginAt: new Date(),
+export interface SessionData {
+  user?: {
+    _id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    fullName: string;
+    role: 'STUDENT' | 'MENTOR' | 'ADMIN';
+    status: 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
+    profileImage: string;
   };
-  let user = await UserModel.findOne({ auth0Id });
-  if (!user) {
-    user = await UserModel.create({ auth0Id, ...fields, role: 'STUDENT' });
-    await StudentProfileModel.create({ userId: user._id });
-  } else {
-    Object.assign(user, fields);
-    await user.save();
+}
+
+export async function getSession(): Promise<SessionData> {
+  try {
+    const cookieStore = await cookies();
+    const session = cookieStore.get('app_user');
+    if (!session?.value) return {};
+
+    const userData = JSON.parse(Buffer.from(session.value, 'base64').toString('utf-8'));
+    return { user: userData };
+  } catch {
+    return {};
   }
-  return user;
+}
+
+export async function setSession(user: SessionData['user']) {
+  const cookieStore = await cookies();
+  if (user) {
+    const encoded = Buffer.from(JSON.stringify(user)).toString('base64');
+    cookieStore.set('app_user', encoded, {
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      sameSite: 'lax',
+    });
+  }
+}
+
+export async function clearSession() {
+  const cookieStore = await cookies();
+  cookieStore.delete('app_user');
 }
