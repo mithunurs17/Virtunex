@@ -3,23 +3,21 @@ import Footer from '../components/Footer';
 import CourseCard from '../components/CourseCard';
 import { courses } from '@/lib/courses';
 import { Gamepad2, Flame, ShieldCheck, Medal } from 'lucide-react';
-import { auth0, isAuth0Configured } from '@/lib/auth0';
-import { getOrCreateAppUser } from '@/lib/auth/session';
+import { getSession } from '@/lib/auth/session';
 import { dbConnect } from '@/lib/db';
 import { StudentProfileModel } from '@/models/StudentProfile';
 
 const internships = [
-  { title: 'Web Development Internship', description: 'Build responsive production-grade websites and web applications with modern frontend and backend tools.', icon: 'WEB', duration: '8-10 weeks', courseId: 'full-stack' },
-  { title: 'Mobile Development Internship', description: 'Create polished mobile products, connect real APIs, and learn the delivery practices used by product teams.', icon: 'MOB', duration: '8-10 weeks', courseId: 'foundations' },
-  { title: 'Cloud & DevOps Internship', description: 'Ship reliable services with deployment workflows, infrastructure fundamentals, observability, and automation.', icon: 'OPS', duration: '8-10 weeks', courseId: 'ai-ml' },
+  { title: 'Basic Foundation', description: 'Build responsive production-grade websites and web applications with modern frontend and backend tools.', icon: 'BASE', duration: '8-10 weeks', courseId: 'foundations' },
+  { title: 'Full Stack Development', description: 'Create polished mobile products, connect real APIs, and learn the delivery practices used by product teams.', icon: 'DEV', duration: '8-10 weeks', courseId: 'full-stack' },
+  { title: 'AI/ML', description: 'Ship reliable services with deployment workflows, infrastructure fundamentals, observability, and automation.', icon: 'AI', duration: '8-10 weeks', courseId: 'ai-ml' },
 ];
 
 async function isRegisteredStudent() {
-  if (!isAuth0Configured || !(await auth0.getSession())) return false;
-  const user = await getOrCreateAppUser();
-  if (!user || user.role !== 'STUDENT') return false;
+  const session = await getSession();
+  if (!session.user) return false;
   await dbConnect();
-  return Boolean(await StudentProfileModel.exists({ userId: user._id }));
+  return Boolean(await StudentProfileModel.exists({ userId: session.user._id }));
 }
 
 export default async function CoursesPage() {

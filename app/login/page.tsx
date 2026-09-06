@@ -1,21 +1,103 @@
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { auth0, isAuth0Configured } from '@/lib/auth0';
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ returnTo?: string }> }) {
-  if (isAuth0Configured && await auth0.getSession()) redirect('/dashboard');
-  const { returnTo = '/dashboard' } = await searchParams;
-  const continueHref = isAuth0Configured ? `/auth/login?returnTo=${encodeURIComponent(returnTo)}` : '/login';
-  return <main className="min-h-screen bg-background text-text flex items-center justify-center px-6">
-    <section className="w-full max-w-md border border-border bg-surface p-8 shadow-2xl">
-      <Image src="/virtunex.png" alt="Virtunex" width={56} height={56} className="mb-8" />
-      <p className="text-accent-light text-sm tracking-[0.2em] uppercase">Virtunex</p>
-      <h1 className="mt-3 text-4xl font-light">Learn. Build. Level Up.</h1>
-      <p className="mt-4 text-muted">Engineering Internship + Gamified Learning + Real Projects</p>
-      <Link href={continueHref} className="mt-8 block bg-jamoon-bright px-5 py-3 text-center font-medium hover:bg-accent transition-colors">Continue with Auth0</Link>
-      {!isAuth0Configured && <p className="mt-4 border border-amber-800 bg-amber-950/40 p-3 text-sm text-amber-200">Auth0 is not configured on this server. Add the values from .env.example and restart the app.</p>}
-      <Link href="/" className="mt-5 block text-center text-sm text-muted hover:text-text">Return home</Link>
-    </section>
-  </main>;
+export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || 'Login failed');
+        return;
+      }
+
+      // Redirect to dashboard
+      router.push('/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-background text-text flex items-center justify-center px-6">
+      <section className="w-full max-w-md border border-border bg-surface p-8 shadow-2xl rounded-2xl">
+        <Image src="/virtunex.png" alt="Virtunex" width={56} height={56} className="mb-6" />
+        <p className="text-accent-light text-sm tracking-[0.2em] uppercase">Virtunex</p>
+        <h1 className="mt-3 text-4xl font-light">Welcome Back</h1>
+        <p className="mt-4 text-muted text-sm">Sign in to your internship dashboard</p>
+
+        {error && (
+          <div className="mt-6 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+            <p className="text-red-400 text-sm">{error}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleLogin} className="mt-8 space-y-4">
+          <div>
+            <label className="block text-sm text-muted mb-2">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="your@email.com"
+              className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder-muted/50 focus:outline-none focus:border-jamoon transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-muted mb-2">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder="••••••••"
+              className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder-muted/50 focus:outline-none focus:border-jamoon transition"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full mt-6 px-5 py-3 bg-jamoon hover:bg-jamoon-bright disabled:opacity-50 disabled:cursor-not-allowed text-foreground font-medium rounded-lg transition"
+          >
+            {loading ? 'Signing in...' : 'Sign In'}
+          </button>
+        </form>
+
+        <p className="mt-6 text-center text-sm text-muted">
+          Don't have an account?{' '}
+          <Link href="/signup" className="text-jamoon hover:text-jamoon-bright transition">
+            Sign up
+          </Link>
+        </p>
+
+        <Link href="/" className="mt-4 block text-center text-sm text-muted hover:text-text transition">
+          Return home
+        </Link>
+      </section>
+    </main>
+  );
 }

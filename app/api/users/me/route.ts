@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
-import { requireAuth, toErrorResponse } from '@/lib/permissions';
+import { getSession } from '@/lib/auth/session';
 
 export async function GET() {
   try {
-    const user = await requireAuth();
-    return NextResponse.json({ user: { id: user._id, email: user.email, firstName: user.firstName, lastName: user.lastName, fullName: user.fullName, profileImage: user.profileImage, role: user.role, status: user.status } });
-  } catch (error) { return toErrorResponse(error); }
+    const session = await getSession();
+    if (!session.user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+    return NextResponse.json({ user: session.user });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }
