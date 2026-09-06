@@ -3,28 +3,52 @@ import Footer from '../components/Footer';
 import CourseCard from '../components/CourseCard';
 import { courses } from '@/lib/courses';
 import { Gamepad2, Flame, ShieldCheck, Medal } from 'lucide-react';
+import { auth0, isAuth0Configured } from '@/lib/auth0';
+import { getOrCreateAppUser } from '@/lib/auth/session';
+import { dbConnect } from '@/lib/db';
+import { StudentProfileModel } from '@/models/StudentProfile';
 
-export default function CoursesPage() {
+const internships = [
+  { title: 'Web Development Internship', description: 'Build responsive production-grade websites and web applications with modern frontend and backend tools.', icon: 'WEB', duration: '8-10 weeks', courseId: 'full-stack' },
+  { title: 'Mobile Development Internship', description: 'Create polished mobile products, connect real APIs, and learn the delivery practices used by product teams.', icon: 'MOB', duration: '8-10 weeks', courseId: 'foundations' },
+  { title: 'Cloud & DevOps Internship', description: 'Ship reliable services with deployment workflows, infrastructure fundamentals, observability, and automation.', icon: 'OPS', duration: '8-10 weeks', courseId: 'ai-ml' },
+];
+
+async function isRegisteredStudent() {
+  if (!isAuth0Configured || !(await auth0.getSession())) return false;
+  const user = await getOrCreateAppUser();
+  if (!user || user.role !== 'STUDENT') return false;
+  await dbConnect();
+  return Boolean(await StudentProfileModel.exists({ userId: user._id }));
+}
+
+export default async function CoursesPage() {
+  const registered = await isRegisteredStudent();
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,#dbeafe,transparent_35%),radial-gradient(circle_at_bottom_left,#ede9fe,transparent_35%),#f8fafc]">
+    <div className="min-h-screen bg-background text-text">
       <Navbar />
       <main className="pt-28 pb-20">
         <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/70 px-4 py-2 text-sm font-semibold text-indigo-700 shadow-sm backdrop-blur"><Gamepad2 className="h-4 w-4" /> Learn like a game. Build like an engineer.</div>
-            <h1 className="mt-6 text-5xl font-semibold tracking-tight text-slate-950 md:text-7xl">Choose your <span className="text-indigo-600">tech quest.</span></h1>
-            <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">Virtunex turns technical learning into a progression system: quests, XP, streaks, checkpoints, projects, badges and a final boss fight.</p>
+            <div className="inline-flex items-center gap-2 border border-border bg-surface px-4 py-2 text-sm font-semibold text-accent-light"><Gamepad2 className="h-4 w-4" /> Three internships. One clear path forward.</div>
+            <h1 className="mt-6 text-5xl font-semibold tracking-tight text-text md:text-7xl">Choose your <span className="text-accent-light">internship.</span></h1>
+            <p className="mt-6 max-w-3xl text-lg leading-8 text-muted">Select one of our three engineering internships. Learning quests, XP, badges, and project work unlock after student registration.</p>
           </div>
 
-          <div className="mt-10 grid grid-cols-2 gap-3 md:grid-cols-4">
+          {registered && <div className="mt-10 grid grid-cols-2 gap-3 md:grid-cols-4">
             {[['XP', 'Earn points for progress', Flame], ['Badges', 'Unlock milestones', Medal], ['Projects', 'Build portfolio proof', ShieldCheck], ['Levels', 'See your growth', Gamepad2]].map(([label, text, Icon]) => {
               const IconComponent = Icon as typeof Flame;
-              return <div key={label as string} className="rounded-2xl border border-white/70 bg-white/70 p-4 backdrop-blur-xl"><IconComponent className="h-5 w-5 text-indigo-600" /><div className="mt-3 font-semibold text-slate-900">{label as string}</div><div className="text-xs text-slate-500">{text as string}</div></div>;
+              return <div key={label as string} className="border border-border bg-card p-4"><IconComponent className="h-5 w-5 text-accent-light" /><div className="mt-3 font-semibold text-text">{label as string}</div><div className="text-xs text-muted">{text as string}</div></div>;
             })}
-          </div>
+          </div>}
 
-          <div className="mt-12 grid gap-8 lg:grid-cols-3">
-            {courses.map((course) => <CourseCard key={course.id} course={course} />)}
+          <div className="mt-12 grid gap-6 lg:grid-cols-3">
+            {internships.map((internship) => <article key={internship.title} className="border border-border bg-surface p-7 shadow-xl shadow-black/20">
+              <div className="flex items-center justify-between"><span className="font-mono text-sm tracking-[0.2em] text-accent-light">{internship.icon}</span><span className="text-xs text-muted">{internship.duration}</span></div>
+              <h2 className="mt-10 text-2xl font-semibold text-text">{internship.title}</h2>
+              <p className="mt-4 min-h-24 text-sm leading-6 text-muted">{internship.description}</p>
+              {registered ? <CourseCard course={courses.find((course) => course.id === internship.courseId)!} /> : <div className="mt-7 border-t border-border pt-5 text-sm text-muted">Register as a student to unlock the learning path, XP, and projects.</div>}
+            </article>)}
           </div>
         </section>
       </main>

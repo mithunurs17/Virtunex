@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import Link from 'next/link';
-import { googleLogin, authenticateFromHash } from '@/lib/auth';
 
 type PaymentChoice = 'partial' | 'full' | null;
 
@@ -70,6 +69,8 @@ export default function OnboardingWizard() {
   const [precheckMsg, setPrecheckMsg] = useState<string>('');
   const [alreadyRegistered, setAlreadyRegistered] = useState<boolean>(false);
   const [showRegisteredModal, setShowRegisteredModal] = useState<boolean>(false);
+  const [submissionError, setSubmissionError] = useState('');
+  const [dataError, setDataError] = useState('');
 
   const isEmailValid = useMemo(() => {
     if (!email) return false;
@@ -100,20 +101,17 @@ export default function OnboardingWizard() {
     }
     try {
       setCheckingVerification(true);
-      const stored = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
-      if (stored) {
-        const parsed = JSON.parse(stored || '{}');
-        const signedInEmail = normalize(parsed?.email || '');
+      fetch('/api/users/me').then((response) => response.ok ? response.json() : null).then((data) => {
+        const signedInEmail = normalize(data?.user?.email || '');
         setAuthEmail(signedInEmail);
         setEmailVerified(Boolean(signedInEmail && signedInEmail === normalize(email)));
-      } else {
+      }).catch(() => {
         setAuthEmail('');
         setEmailVerified(false);
-      }
+      }).finally(() => setCheckingVerification(false));
     } catch {
       setAuthEmail('');
       setEmailVerified(false);
-    } finally {
       setCheckingVerification(false);
     }
   }, [email, isEmailValid]);
@@ -124,11 +122,11 @@ export default function OnboardingWizard() {
       const hash = window.location.hash;
       try { formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch {}
       setSsoLoading(true);
-      authenticateFromHash(hash).then((user) => {
+      fetch('/api/users/me').then((response) => response.ok ? response.json() : null).then((data) => {
         setSsoLoading(false);
-        if (user?.email) {
-          setAuthEmail(user.email);
-          setEmail(user.email);
+        if (data?.user?.email) {
+          setAuthEmail(data.user.email);
+          setEmail(data.user.email);
           setEmailVerified(true);
           // Clean the hash from URL
           try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch {}
@@ -201,8 +199,9 @@ export default function OnboardingWizard() {
   // Load branches
   useEffect(() => {
     fetch('/api/branches').then(r=>r.json()).then((d)=>{
+      if (d?.error) throw new Error(d.error);
       setAvailableBranches(d.result || []);
-    }).catch(()=>{});
+    }).catch(()=>setDataError('Registration data is unavailable. Configure MONGODB_URI on the server, then refresh this page.'));
   }, []);
 
   // Load projects when branch changes
@@ -221,11 +220,12 @@ export default function OnboardingWizard() {
     fetch('/api/batches')
       .then((r) => r.json())
       .then((d) => {
+      if (d?.error) throw new Error(d.error);
         const list: ApiBatch[] = Array.isArray(d?.result) ? d.result : [];
         const onlyAvailable = list.filter((b) => (b.status || 'available') === 'available');
         setAvailableBatchesFromApi(onlyAvailable);
       })
-      .catch(() => setAvailableBatchesFromApi([]));
+      .catch(() => setDataError('Registration data is unavailable. Configure MONGODB_URI on the server, then refresh this page.'));
   }, []);
 
   const goNext = () => {
@@ -236,7 +236,7 @@ export default function OnboardingWizard() {
       const payload = {
         fullName,
         email: authEmail || email,
-        picture: (typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('user')||'{}')?.picture || '') : ''),
+        picture: '',
         whatsapp: whatsappDigits,
         college,
         yop,
@@ -253,11 +253,11 @@ export default function OnboardingWizard() {
           return fetch('/api/enrollments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
             .then(async (r) => {
               if (r.status === 409) { setStep(5); return; }
-              await r.json();
+              if (!r.ok) { const data = await r.json().catch(() => null); throw new Error(data?.error || 'Registration failed'); }
               setStep(5);
             });
         })
-        .catch(() => setStep(5));
+        .catch((error: unknown) => setSubmissionError(error instanceof Error ? error.message : 'Registration failed. Configure the database and try again.'));
     } else {
       setStep((s) => Math.min(5, s + 1));
     }
@@ -275,6 +275,8 @@ export default function OnboardingWizard() {
           {precheckMsg && (
             <p className="mt-2 text-sm text-rose-700 bg-rose-50 inline-block px-3 py-1.5 rounded-xl border border-rose-200">{precheckMsg}</p>
           )}
+          {submissionError && <p className="mt-2 text-sm text-rose-300 bg-rose-950/40 inline-block px-3 py-1.5 rounded-xl border border-rose-800">{submissionError}</p>}
+          {dataError && <p className="mt-2 text-sm text-amber-200 bg-amber-950/40 inline-block px-3 py-1.5 rounded-xl border border-amber-800">{dataError}</p>}
         </div>
         <div className="inline-flex items-center gap-2 bg-white/70 backdrop-blur-xl rounded-full px-4 py-2 border border-white/40 shadow-sm">
           <span className="text-xs font-medium text-slate-600 tracking-wide">Step {step} of 5</span>
@@ -317,7 +319,7 @@ export default function OnboardingWizard() {
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => { setSsoLoading(true); googleLogin(); }}
+                      onClick={() => { window.location.href = '/login?returnTo=/internships'; }}
                       className={`px-3 py-2 rounded-2xl text-sm border transition whitespace-nowrap bg-slate-900/90 text-white border-slate-800/30 hover:bg-slate-900 inline-flex items-center gap-2`}
                     >
                       {ssoLoading ? (

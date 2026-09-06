@@ -1,0 +1,14 @@
+'use client';
+
+import { FormEvent, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+type Branch = { _id: string; name: string };
+const fields = [['phone', 'Phone'], ['usn', 'USN'], ['collegeName', 'College'], ['semester', 'Semester'], ['graduationYear', 'Graduation Year'], ['githubUrl', 'GitHub'], ['linkedinUrl', 'LinkedIn'], ['portfolioUrl', 'Portfolio'], ['preferredProgram', 'Preferred Program'], ['preferredTrack', 'Preferred Track'], ['skills', 'Skills (comma separated)']];
+export default function OnboardingForm({ initialName }: { initialName: string }) {
+  const router = useRouter(); const [values, setValues] = useState<Record<string, string>>({ fullName: initialName }); const [branches, setBranches] = useState<Branch[]>([]); const [error, setError] = useState(''); const [saving, setSaving] = useState(false);
+  useEffect(() => { fetch('/api/branches').then((r) => r.json()).then((d) => setBranches(d.result || [])).catch(() => undefined); }, []);
+  const update = (key: string, value: string) => setValues((current) => ({ ...current, [key]: value }));
+  async function submit(event: FormEvent) { event.preventDefault(); setSaving(true); setError(''); const payload = { ...values, semester: values.semester ? Number(values.semester) : undefined, graduationYear: values.graduationYear ? Number(values.graduationYear) : undefined, skills: values.skills?.split(',').map((skill) => skill.trim()).filter(Boolean), onboardingCompleted: true }; const response = await fetch('/api/students/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (!response.ok) { setError('Unable to save your profile.'); setSaving(false); return; } router.push('/dashboard'); }
+  return <form onSubmit={submit} className="mt-10 grid gap-5 border border-border bg-surface p-6 md:grid-cols-2">{fields.map(([key, label]) => <label key={key} className="grid gap-2 text-sm text-muted">{label}<input required={['phone', 'collegeName'].includes(key)} value={values[key] || ''} onChange={(event) => update(key, event.target.value)} type={['semester', 'graduationYear'].includes(key) ? 'number' : 'text'} className="border border-border bg-card px-3 py-3 text-text outline-none focus:border-accent" /></label>)}<label className="grid gap-2 text-sm text-muted md:col-span-2">Branch<select value={values.branchId || ''} onChange={(event) => update('branchId', event.target.value)} className="border border-border bg-card px-3 py-3 text-text"><option value="">Select branch</option>{branches.map((branch) => <option key={branch._id} value={branch._id}>{branch.name}</option>)}</select></label>{error && <p className="text-sm text-red-300 md:col-span-2">{error}</p>}<button disabled={saving} className="bg-jamoon-bright px-5 py-3 text-text hover:bg-accent disabled:opacity-50 md:col-span-2">{saving ? 'Saving...' : 'Complete profile'}</button></form>;
+}

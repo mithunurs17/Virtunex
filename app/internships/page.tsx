@@ -1,39 +1,32 @@
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import Image from 'next/image';
-import { Code, Smartphone, Cloud, Brain, Check, Shield, Trophy } from 'lucide-react';
+import { BookOpen, Code2, BrainCircuit, Check, Shield, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import OnboardingWizardClient from '../components/OnboardingWizardClient';
 
 export default function InternshipsPage() {
   const tracks = [
     {
-      id: 'web',
-      title: 'Web Development',
-      icon: Code,
-      description: 'Build responsive, production-grade web apps with modern stacks.',
-      topics: ['React / Next.js', 'TypeScript', 'Node.js', 'API Design'],
+      id: 'basic-foundation',
+      title: 'Basic Foundation',
+      icon: BookOpen,
+      description: 'Build the programming, DSA, and computer science fundamentals every engineer needs.',
+      topics: ['Programming', 'DSA', 'OOP / DBMS', 'SQL'],
     },
     {
-      id: 'mobile',
-      title: 'Mobile Development',
-      icon: Smartphone,
-      description: 'Create polished iOS and Android apps with best practices.',
-      topics: ['React Native', 'Flutter', 'Native Modules', 'Testing'],
+      id: 'full-stack',
+      title: 'Full Stack Development',
+      icon: Code2,
+      description: 'Build production-style web applications from the interface to APIs, databases, and deployment.',
+      topics: ['React / Next.js', 'Node.js', 'MongoDB', 'Spring Boot'],
     },
     {
-      id: 'cloud',
-      title: 'Cloud & DevOps',
-      icon: Cloud,
-      description: 'Ship reliably with IaC, CI/CD and cloud-native patterns.',
-      topics: ['AWS / GCP', 'Docker / K8s', 'Terraform', 'Observability'],
-    },
-    {
-      id: 'ai',
-      title: 'AI / ML',
-      icon: Brain,
-      description: 'Deliver real AI value using modern frameworks and tooling.',
-      topics: ['Python', 'TensorFlow / PyTorch', 'LLMs', 'MLOps'],
+      id: 'aiml',
+      title: 'AI/ML',
+      icon: BrainCircuit,
+      description: 'Move from Python and data foundations to practical machine learning and intelligent applications.',
+      topics: ['Python', 'Machine Learning', 'Deep Learning', 'GenAI'],
     },
   ];
 
@@ -158,7 +151,7 @@ export default function InternshipsPage() {
         <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-gradient-to-br from-indigo-100/20 to-purple-200/20 rounded-full blur-3xl"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-14">
-            <h2 className="text-5xl md:text-6xl font-light text-slate-900 mb-4 tracking-tight">Choose Your Track</h2>
+            <h2 className="text-5xl md:text-6xl font-light text-slate-900 mb-4 tracking-tight">Choose Your Course</h2>
             <p className="text-lg text-slate-600 font-light">Industry-aligned curricula with hands-on, outcome-driven learning.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">

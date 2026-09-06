@@ -2,10 +2,12 @@ import { NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/db';
 import { BranchModel } from '@/models/Branch';
 import { ProjectModel } from '@/models/Project';
+import { requireAdmin, toErrorResponse } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST() {
+  try { await requireAdmin(); } catch (error) { return toErrorResponse(error); }
   await dbConnect();
   await BranchModel.deleteMany({});
   await ProjectModel.deleteMany({});

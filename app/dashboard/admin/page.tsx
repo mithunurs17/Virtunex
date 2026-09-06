@@ -47,13 +47,10 @@ export default function AdminAnalyticsDashboard() {
   const [editingBatch, setEditingBatch] = useState({ name: '', status: 'available' as 'available' | 'expired', capacity: 0, enrolled: 0, schedule: '' });
 
   useEffect(() => {
-    // Gate: require admin auth set in localStorage
-    try {
-      if (localStorage.getItem('admin_auth') !== '1') {
-        router.replace('/dashboard');
-        return;
-      }
-    } catch {}
+    fetch('/api/admin/me').then((response) => {
+      if (!response.ok) { router.replace('/dashboard'); return; }
+      run();
+    });
     const run = async () => {
       try {
         const [b, p, bt, en] = await Promise.all([
@@ -70,7 +67,6 @@ export default function AdminAnalyticsDashboard() {
         setLoading(false);
       }
     };
-    run();
   }, [router, refreshKey]);
 
   // Sync active section with hash (without navigation reload)
@@ -317,7 +313,7 @@ export default function AdminAnalyticsDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-background text-text">
       <Navbar />
 
       <div className="max-w-7xl  pt-28 mx-auto px-4 sm:px-6 lg:px-8 pb-8 grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6">
@@ -337,7 +333,7 @@ export default function AdminAnalyticsDashboard() {
           </nav>
           {/* Filter removed */}
           <button
-            onClick={() => { try { localStorage.removeItem('admin_auth'); } catch {}; router.push('/dashboard'); }}
+            onClick={() => { window.location.href = '/auth/logout'; }}
             className="mt-6 w-full text-sm text-slate-600 underline">
             Logout
           </button>

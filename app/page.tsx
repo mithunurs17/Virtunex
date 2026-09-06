@@ -200,52 +200,28 @@ export default function Home() {
                     <div className="flex px-2 pt-2 pb-10 overflow-x-auto md:grid md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10 scrollbar-hide">
             {[
               {
-                title: "Web Development",
-                description: "Modern, responsive websites and web applications built with cutting-edge technologies.",
+                title: "Basic Foundation",
+                description: "Programming, DSA, OOP, DBMS, SQL, and core computer science foundations.",
                 image: "https://images.unsplash.com/photo-1547658719-da2b51169166?q=80&w=1064&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
                 imageAlt: "Web development UI on laptop",
-                tags: ["React", "Next.js", "Node.js"],
-                href: "/services#web"
+                tags: ["Programming", "DSA", "CS Core"],
+                href: "/services#basic-foundation"
               },
               {
-                title: "Mobile App Development",
-                description: "Native and cross-platform mobile applications for iOS and Android.",
+                title: "Full Stack Development",
+                description: "Production-style web applications from frontend interfaces to APIs, databases, and deployment.",
                 image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
                 imageAlt: "Mobile app UI on smartphone",
-                tags: ["React Native", "Flutter", "Swift"],
-                href: "/services#mobile"
+                tags: ["React", "Node.js", "Spring Boot"],
+                href: "/services#full-stack"
               },
               {
-                title: "Cloud Solutions",
-                description: "Scalable cloud infrastructure and migration services.",
+                title: "AI/ML",
+                description: "Practical machine learning, deep learning, and intelligent application development.",
                 image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=1600&auto=format&fit=crop",
                 imageAlt: "Cloud infrastructure",
-                tags: ["AWS", "Azure", "GCP"],
-                href: "/services#cloud"
-              },
-              {
-                title: "AI/ML Solutions",
-                description: "Intelligent automation and machine learning for your business.",
-                image: "https://plus.unsplash.com/premium_photo-1682689573748-0b8996ed42f2?q=80&w=1035&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                imageAlt: "AI and machine learning visual",
-                tags: ["TensorFlow", "PyTorch", "AWS"],
-                href: "/services#ai"
-              },
-              {
-                title: "Cybersecurity",
-                description: "Protect your digital assets with advanced threat detection.",
-                image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                imageAlt: "Cybersecurity shield",
-                tags: ["Penetration Testing", "SOC", "Compliance"],
-                href: "/services#cybersecurity"
-              },
-              {
-                title: "IT Consulting",
-                description: "Strategic technology consulting to guide decisions and roadmaps.",
-                image: "https://images.unsplash.com/photo-1553877522-43269d4ea984?q=80&w=1600&auto=format&fit=crop",
-                imageAlt: "Consulting discussion",
-                tags: ["Strategy", "Architecture", "Planning"],
-                href: "/services#consulting"
+                tags: ["Python", "ML", "GenAI"],
+                href: "/services#aiml"
               }
             ].map((service, index) => (
               <ServiceCard key={index} {...service} />

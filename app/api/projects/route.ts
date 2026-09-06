@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/db';
 import { ProjectModel } from '@/models/Project';
+import { requireAdmin, toErrorResponse } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  try { await requireAdmin(); } catch (error) { return toErrorResponse(error); }
   await dbConnect();
   const body = await req.json();
   const created = await ProjectModel.create({ title: body.title, description: body.description || '', branches: body.branches || [] });
@@ -22,6 +24,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  try { await requireAdmin(); } catch (error) { return toErrorResponse(error); }
   await dbConnect();
   const body = await req.json();
   const { id, title, description, branches } = body as { id: string; title?: string; description?: string; branches?: string[] };
@@ -34,6 +37,7 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  try { await requireAdmin(); } catch (error) { return toErrorResponse(error); }
   await dbConnect();
   const { searchParams } = new URL(req.url);
   const id = searchParams.get('id');

@@ -1,18 +1,25 @@
 import mongoose, { Schema, InferSchemaType, Model } from 'mongoose';
 
 const EnrollmentSchema = new Schema({
-  fullName: { type: String, required: true, trim: true },
-  email: { type: String, required: true, trim: true, lowercase: true, unique: true },
-  picture: { type: String, default: '' },
-  whatsapp: { type: String, required: true, trim: true },
-  college: { type: String, required: true, trim: true },
-  yop: { type: String, required: true },
-  branchId: { type: Schema.Types.ObjectId, ref: 'Branch', required: true },
-  projectId: { type: Schema.Types.ObjectId, ref: 'Project' },
-  batchId: { type: Schema.Types.ObjectId, ref: 'Batch', required: true },
-  payment: { type: String, enum: ['partial', 'full'], required: true },
-  certificateDistributedAt: { type: Date },
+  studentId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  programId: { type: Schema.Types.ObjectId, ref: 'InternshipProgram', required: true, index: true },
+  batchId: { type: Schema.Types.ObjectId, ref: 'Batch', index: true },
+  branchId: { type: Schema.Types.ObjectId, ref: 'Branch' },
+  status: { type: String, enum: ['APPLIED', 'APPROVED', 'ACTIVE', 'COMPLETED', 'REJECTED', 'WITHDRAWN'], default: 'APPLIED', index: true },
+  paymentStatus: { type: String, enum: ['pending', 'partial', 'full'], default: 'pending' },
+  enrollmentDate: { type: Date, default: Date.now },
+  internshipStartDate: { type: Date },
+  internshipEndDate: { type: Date },
+  completionPercentage: { type: Number, default: 0, min: 0, max: 100 },
+  internshipReadinessScore: { type: Number, default: 0, min: 0, max: 100 },
+  certificateEligible: { type: Boolean, default: false },
+  certificateId: { type: String, default: '' },
 }, { timestamps: true });
+
+// Compound indexes for common queries
+EnrollmentSchema.index({ studentId: 1, programId: 1 });
+EnrollmentSchema.index({ studentId: 1, status: 1 });
+EnrollmentSchema.index({ batchId: 1, status: 1 });
 
 export type Enrollment = InferSchemaType<typeof EnrollmentSchema> & { _id: string };
 

@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import Navbar from '@/app/components/Navbar';
 import Footer from '@/app/components/Footer';
-import { googleLogin, authenticateFromHash } from '@/lib/auth';
 import Image from 'next/image';
 import { useMemo } from 'react';
 
@@ -12,7 +11,6 @@ type BasicUser = { name?: string; email?: string; picture?: string };
 export default function CandidateDashboardPage() {
   const [user, setUser] = useState<BasicUser | null>(null);
   const [checking, setChecking] = useState(true);
-  const [ssoLoading, setSsoLoading] = useState(false);
   const [enrollment, setEnrollment] = useState<{
     _id: string;
     fullName: string;
@@ -32,26 +30,9 @@ export default function CandidateDashboardPage() {
   const [savingProject, setSavingProject] = useState(false);
   const [projectChoice, setProjectChoice] = useState('undecided');
 
-  // Handle Auth0 hash return and local session for candidate (separate from admin 'admin_auth')
+  // Candidate identity comes from the server-backed Auth0 session.
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.hash) {
-      setSsoLoading(true);
-      authenticateFromHash(window.location.hash).then((u) => {
-        setSsoLoading(false);
-        if (u?.email) {
-          try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch {}
-          setUser({ name: u.name, email: u.email, picture: u.picture });
-        }
-      });
-    }
-    try {
-      const raw = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
-      if (raw) {
-        const parsed = JSON.parse(raw || '{}');
-        setUser({ name: parsed?.name, email: parsed?.email, picture: parsed?.picture });
-      }
-    } catch {}
-    setChecking(false);
+    fetch('/api/users/me').then((r) => r.ok ? r.json() : null).then((data) => setUser(data?.user ? { name: data.user.fullName, email: data.user.email, picture: data.user.profileImage } : null)).finally(() => setChecking(false));
   }, []);
 
   // Load enrollment for this candidate
@@ -158,10 +139,7 @@ export default function CandidateDashboardPage() {
     return { steps, currentIdx: firstPendingIdx === -1 ? steps.length - 1 : firstPendingIdx };
   }, [enrollment]);
 
-  const logout = () => {
-    try { localStorage.removeItem('user'); } catch {}
-    setUser(null);
-  };
+  const logout = () => { window.location.href = '/auth/logout'; };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -268,10 +246,7 @@ export default function CandidateDashboardPage() {
           ) : (
             <div className="flex flex-col items-center gap-4">
               <p className="text-lg text-slate-600 font-light">Sign in with Google to access your candidate dashboard.</p>
-              <button onClick={()=>googleLogin()} className="px-5 py-3 rounded-2xl bg-slate-900/90 text-white border border-slate-800/30 hover:bg-slate-900 inline-flex items-center gap-2">
-                {ssoLoading && <span className="w-4 h-4 border-2 border-white/50 border-t-transparent rounded-full animate-spin" aria-hidden></span>}
-                {ssoLoading ? 'Signing in…' : 'Login with Google'}
-              </button>
+              <a href="/login" className="px-5 py-3 rounded-2xl bg-slate-900/90 text-white border border-slate-800/30 hover:bg-slate-900 inline-flex items-center gap-2">Continue with Auth0</a>
             </div>
           )}
         </div>

@@ -3,6 +3,7 @@ import { dbConnect } from '@/lib/db';
 import { EnrollmentModel } from '@/models/Enrollment';
 import { BatchModel } from '@/models/Batch';
 import { sendInternshipOfferEmail, EmailData } from '@/lib/email';
+import { requireAdmin, toErrorResponse } from '@/lib/permissions';
 
 // Ensure referenced schemas are registered for populate()
 import '@/models/Branch';
@@ -235,6 +236,7 @@ export async function POST(req: NextRequest) {
 
 // DELETE /api/enrollments?id=
 export async function DELETE(req: NextRequest) {
+  try { await requireAdmin(); } catch (error) { return toErrorResponse(error); }
   await dbConnect();
 
   const { searchParams } = new URL(req.url);
@@ -281,6 +283,7 @@ export async function DELETE(req: NextRequest) {
 
 // PUT /api/enrollments
 export async function PUT(req: NextRequest) {
+  try { await requireAdmin(); } catch (error) { return toErrorResponse(error); }
   await dbConnect();
 
   const body = await req.json();

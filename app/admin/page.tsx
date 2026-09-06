@@ -13,12 +13,10 @@ export default function AdminDashboard() {
   const [newProject, setNewProject] = useState({ title: '', description: '', branchIds: [] as string[] });
 
   useEffect(() => {
-    if (localStorage.getItem('admin_auth') === '1') {
-      setAuthed(true);
-      refresh();
-    } else {
-      window.location.href = '/admin/login';
-    }
+    fetch('/api/admin/me').then((response) => {
+      if (!response.ok) { window.location.href = '/login'; return; }
+      setAuthed(true); refresh();
+    });
   }, []);
 
   const refresh = async () => {
@@ -51,7 +49,7 @@ export default function AdminDashboard() {
   if (!authed) return null;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="min-h-screen bg-background text-text max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <h1 className="text-3xl font-light text-slate-900 mb-6">Admin Dashboard</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <section className="bg-white/60 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/30">

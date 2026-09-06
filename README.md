@@ -24,8 +24,15 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 To learn more about Next.js, take a look at the following resources:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Promoting an admin
+
+After a user has signed in through Auth0, run:
+
+```bash
+npm run promote:admin -- someone@example.com
+```
+
+This command requires `MONGODB_URI` and promotes an existing user without accepting credentials. In production, run it from a trusted operator machine or restricted CI job with database access; never expose it as a public route.
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 

@@ -1,27 +1,27 @@
 import mongoose from 'mongoose';
 
-// Hardcoded MongoDB URL per user request
-const MONGODB_URI = 'mongodb+srv://upksilleo:upksilleo@cluster0.bt9ohww.mongodb.net/virtunex?retryWrites=true&w=majority&appName=Cluster0';
-
 type MongooseGlobal = typeof globalThis & {
   _mongooseConn?: Promise<typeof mongoose>;
 };
 
-let cached = (global as MongooseGlobal)._mongooseConn;
-
-if (!cached) {
-  (global as MongooseGlobal)._mongooseConn = mongoose.connect(MONGODB_URI, {
-    serverSelectionTimeoutMS: 15000 as number,
-  } as any);
-  cached = (global as MongooseGlobal)._mongooseConn;
-}
+const getMongoUri = () => {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) throw new Error('MONGODB_URI is required to connect to MongoDB');
+  return uri;
+};
 
 export async function dbConnect(): Promise<typeof mongoose> {
-  if (!cached) {
-    cached = mongoose.connect(MONGODB_URI);
-    (global as MongooseGlobal)._mongooseConn = cached;
+  const state = globalThis as MongooseGlobal;
+  if (!state._mongooseConn) {
+    state._mongooseConn = mongoose.connect(getMongoUri(), { serverSelectionTimeoutMS: 15000 });
   }
-  return cached;
+  try {
+    await state._mongooseConn;
+  } catch (error) {
+    state._mongooseConn = undefined;
+    throw error;
+  }
+  return mongoose;
 }
 
 

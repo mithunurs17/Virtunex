@@ -3,9 +3,9 @@ import Image from 'next/image';
 
 export default function Footer() {
   return (
-    <footer className="bg-slate-900 text-white relative overflow-hidden">
+    <footer className="bg-background text-text relative overflow-hidden border-t border-border">
       {/* Subtle background elements */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-800/30 via-slate-900/50 to-slate-800/30"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-surface via-background to-jamoon/20"></div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
@@ -75,28 +75,18 @@ export default function Footer() {
             <h3 className="text-lg font-semibold">Services</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/services#web" className="text-slate-300 hover:text-white transition-colors">
-                  Web Development
+                <Link href="/services#basic-foundation" className="text-slate-300 hover:text-white transition-colors">
+                  Basic Foundation
                 </Link>
               </li>
               <li>
-                <Link href="/services#mobile" className="text-slate-300 hover:text-white transition-colors">
-                  Mobile App Development
+                <Link href="/services#full-stack" className="text-slate-300 hover:text-white transition-colors">
+                  Full Stack Development
                 </Link>
               </li>
               <li>
-                <Link href="/services#cloud" className="text-slate-300 hover:text-white transition-colors">
-                  Cloud Solutions
-                </Link>
-              </li>
-              <li>
-                <Link href="/services#ai" className="text-slate-300 hover:text-white transition-colors">
-                  AI/ML Solutions
-                </Link>
-              </li>
-              <li>
-                <Link href="/services#cybersecurity" className="text-slate-300 hover:text-white transition-colors">
-                  Cybersecurity
+                <Link href="/services#aiml" className="text-slate-300 hover:text-white transition-colors">
+                  AI/ML
                 </Link>
               </li>
             </ul>

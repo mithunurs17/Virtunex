@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/db';
 import { BranchModel } from '@/models/Branch';
+import { requireAdmin, toErrorResponse } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +12,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  try { await requireAdmin(); } catch (error) { return toErrorResponse(error); }
   await dbConnect();
   const body = await req.json();
   const created = await BranchModel.create({ name: body.name, code: body.code });
@@ -18,6 +20,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  try { await requireAdmin(); } catch (error) { return toErrorResponse(error); }
   await dbConnect();
   const body = await req.json();
   const { id, name, code } = body as { id: string; name?: string; code?: string };
@@ -30,6 +33,7 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  try { await requireAdmin(); } catch (error) { return toErrorResponse(error); }
   await dbConnect();
   const { searchParams } = new URL(req.url);
   const id = searchParams.get('id');

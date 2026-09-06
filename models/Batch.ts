@@ -1,14 +1,21 @@
 import mongoose, { Schema, InferSchemaType, Model } from 'mongoose';
 
 const BatchSchema = new Schema({
-  name: { type: String, required: true, trim: true, unique: true },
-  status: { type: String, enum: ['available', 'expired'], default: 'available' },
+  programId: { type: Schema.Types.ObjectId, ref: 'InternshipProgram', required: true, index: true },
+  name: { type: String, required: true, trim: true },
+  code: { type: String, required: true, unique: true, trim: true },
+  status: { type: String, enum: ['UPCOMING', 'ACTIVE', 'COMPLETED', 'CANCELLED'], default: 'UPCOMING', index: true },
   capacity: { type: Number, default: 0, min: 0 },
-  enrolled: { type: Number, default: 0, min: 0 },
+  enrolledCount: { type: Number, default: 0, min: 0 },
   schedule: { type: String, default: '' },
   startDate: { type: Date },
   endDate: { type: Date },
+  mentorIds: { type: [Schema.Types.ObjectId], ref: 'User', default: [] },
+  createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
+
+// Compound index for common queries
+BatchSchema.index({ programId: 1, status: 1 });
 
 export type Batch = InferSchemaType<typeof BatchSchema> & { _id: string };
 
