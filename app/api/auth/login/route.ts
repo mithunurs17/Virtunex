@@ -17,7 +17,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await dbConnect();
+    try {
+      await dbConnect();
+    } catch (error) {
+      console.error('[POST /api/auth/login] Database connection failed:', error);
+      return NextResponse.json(
+        { error: 'Service temporarily unavailable. Please try again later.' },
+        { status: 503 }
+      );
+    }
 
     // Find user by email
     const user = await UserModel.findOne({ email: email.toLowerCase().trim() });
@@ -46,7 +54,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Update last login
-    await UserModel.findByIdAndUpdate(user._id, { lastLoginAt: new Date() });
+    try {
+      await UserModel.findByIdAndUpdate(user._id, { lastLoginAt: new Date() });
+    } catch (error) {
+      console.error('[POST /api/auth/login] Failed to update lastLoginAt:', error);
+      // Continue anyway - this is non-critical
+    }
 
     // Set session
     await setSession({
@@ -60,24 +73,11 @@ export async function POST(req: NextRequest) {
       profileImage: user.profileImage,
     });
 
-    return NextResponse.json(
-      {
-        message: 'Login successful',
-        user: {
-          id: user._id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          fullName: user.fullName,
-          role: user.role,
-        },
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('[POST /api/auth/login]', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Login failed' },
+      { error: 'An unexpected error occurred' },
       { status: 500 }
     );
   }

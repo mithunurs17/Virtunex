@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -11,6 +11,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure component is hydrated on client
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +33,7 @@ export default function LoginPage() {
       if (!res.ok) {
         const data = await res.json();
         setError(data.error || 'Login failed');
+        setLoading(false);
         return;
       }
 
@@ -34,10 +41,21 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
       setLoading(false);
     }
   };
+
+  if (!isClient) {
+    return (
+      <main className="min-h-screen bg-background text-text flex items-center justify-center px-6">
+        <section className="w-full max-w-md border border-border bg-surface p-8 shadow-2xl rounded-2xl">
+          <div className="h-14 bg-card rounded animate-pulse mb-6" />
+          <div className="h-6 bg-card rounded animate-pulse mb-4" />
+          <div className="h-4 bg-card rounded animate-pulse mb-8" />
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-background text-text flex items-center justify-center px-6">
