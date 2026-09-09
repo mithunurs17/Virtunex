@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    const user = await requireAuth();
     await dbConnect();
     const { searchParams } = new URL(req.url);
     const studentId = searchParams.get('studentId');
@@ -18,7 +19,13 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status');
 
     const query: Record<string, unknown> = {};
-    if (studentId) query.studentId = studentId;
+    // Students may only read their own applications. Administrators retain
+    // access to the complete list used by the enrollment dashboard.
+    if (user.role === 'ADMIN') {
+      if (studentId) query.studentId = studentId;
+    } else {
+      query.studentId = user._id;
+    }
     if (programId) query.programId = programId;
     if (batchId) query.batchId = batchId;
     if (status) query.status = status;

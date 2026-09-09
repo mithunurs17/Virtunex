@@ -43,6 +43,7 @@ export default function StudentInternshipPage() {
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
+  const [application, setApplication] = useState<Enrollment | null>(null);
   const [mentor, setMentor] = useState<MentorAssignment | null>(null);
 
   useEffect(() => {
@@ -64,16 +65,22 @@ export default function StudentInternshipPage() {
           return;
         }
 
-        // Get active enrollment
-        const enrollRes = await fetch(`/api/enrollments?studentId=${userId}&status=ACTIVE`);
+        // Load the application as well as active internships. A newly
+        // onboarded student is APPLIED until an administrator approves it.
+        const enrollRes = await fetch(`/api/enrollments?studentId=${userId}`);
         const enrollData = await enrollRes.json();
         if (enrollData.result && enrollData.result.length > 0) {
-          setEnrollment(enrollData.result[0]);
+          const activeEnrollment = enrollData.result.find((item: Enrollment) => item.status === 'ACTIVE');
+          if (!activeEnrollment) {
+            setApplication(enrollData.result[0]);
+          } else {
+            setEnrollment(activeEnrollment);
+          }
 
           // Get mentor assignment
-          if (enrollData.result[0].batchId) {
+          if (activeEnrollment?.batchId) {
             const mentorRes = await fetch(
-              `/api/mentor-assignments?studentId=${userId}&batchId=${enrollData.result[0].batchId._id}`
+              `/api/mentor-assignments?studentId=${userId}&batchId=${activeEnrollment.batchId._id}`
             );
             const mentorData = await mentorRes.json();
             if (mentorData.result && mentorData.result.length > 0) {
@@ -100,13 +107,22 @@ export default function StudentInternshipPage() {
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-light mb-6">My Internship</h1>
           <div className="bg-surface rounded-2xl p-8 text-center">
-            <p className="text-muted mb-4">No active internship enrollment found.</p>
-            <a
-              href="/internships"
-              className="inline-block px-6 py-2 bg-jamoon hover:bg-jamoon-bright text-foreground rounded-xl transition"
-            >
-              Browse Internships
-            </a>
+            {application ? (
+              <>
+                <p className="text-lg text-foreground mb-2">Your application has been received.</p>
+                <p className="text-muted">Status: {application.status}. We&apos;ll notify you once your internship is approved and a batch is assigned.</p>
+              </>
+            ) : (
+              <>
+                <p className="text-muted mb-4">No internship application found.</p>
+                <a
+                  href="/student/onboarding"
+                  className="inline-block px-6 py-2 bg-jamoon hover:bg-jamoon-bright text-foreground rounded-xl transition"
+                >
+                  Complete onboarding
+                </a>
+              </>
+            )}
           </div>
         </div>
       </div>

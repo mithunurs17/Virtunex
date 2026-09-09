@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import { dbConnect } from '@/lib/db';
 import { StudentProfileModel } from '@/models/StudentProfile';
 import { UserModel } from '@/models/User';
+import { EnrollmentModel } from '@/models/Enrollment';
+import { InternshipProgramModel } from '@/models/InternshipProgram';
 import { requireStudent, toErrorResponse } from '@/lib/permissions';
 
 const editable = ['usn', 'collegeName', 'university', 'branchId', 'semester', 'graduationYear', 'city', 'state', 'githubUrl', 'linkedinUrl', 'portfolioUrl', 'skills', 'preferredProgram', 'preferredTrack', 'phone'] as const;
@@ -56,6 +58,24 @@ export async function PATCH(req: NextRequest) {
     }
     
     const body = await req.json();
+    const isCompletingOnboarding = body.onboardingCompleted === true;
+    const preferredProgram = typeof body.preferredProgram === 'string'
+      ? body.preferredProgram.trim()
+      : '';
+
+    // A completed profile is also an internship application. Resolve the
+    // selected profile value (which is the program slug) before saving so we
+    // never send a student to the dashboard without an enrollment path.
+    const selectedProgram = isCompletingOnboarding
+      ? await InternshipProgramModel.findOne({ slug: preferredProgram, active: true }).select('_id').lean()
+      : null;
+
+    if (isCompletingOnboarding && !selectedProgram) {
+      return NextResponse.json(
+        { error: 'The selected internship program is no longer available. Please choose another program.' },
+        { status: 400 }
+      );
+    }
     
     const updates: Record<string, unknown> = {};
     for (const key of editable) {
@@ -80,6 +100,27 @@ export async function PATCH(req: NextRequest) {
       { $set: updates },
       { new: true, upsert: true, setDefaultsOnInsert: true }
     ).lean();
+
+    if (selectedProgram) {
+      // Keep onboarding retry-safe: completing the form again must not create
+      // a second application for the same program.
+      await EnrollmentModel.findOneAndUpdate(
+        { studentId: user._id, programId: selectedProgram._id },
+        {
+          $setOnInsert: {
+            studentId: user._id,
+            programId: selectedProgram._id,
+            status: 'APPLIED',
+            paymentStatus: 'pending',
+            enrollmentDate: new Date(),
+            completionPercentage: 0,
+            internshipReadinessScore: 0,
+            certificateEligible: false,
+          },
+        },
+        { new: true, upsert: true, setDefaultsOnInsert: true }
+      );
+    }
     
     if (body.phone !== undefined) {
       try {
