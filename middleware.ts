@@ -5,8 +5,16 @@ const publicPages = /^\/(|courses|internships|about|contact|login|careers|servic
 
 function publicApi(req: NextRequest) {
   const path = req.nextUrl.pathname;
+  const isGet = req.method === 'GET';
+
   return (
-    (path === '/api/branches' || path === '/api/projects' || path === '/api/programs' || path === '/api/batches') && req.method === 'GET' ||
+    (isGet &&
+      (path === '/api/branches' ||
+        path === '/api/projects' ||
+        path === '/api/programs' ||
+        path.startsWith('/api/programs/') ||
+        path === '/api/batches' ||
+        path.startsWith('/api/batches/'))) ||
     (path === '/api/enrollments' && ['GET', 'POST'].includes(req.method)) ||
     path.startsWith('/api/auth/')
   );
@@ -14,15 +22,14 @@ function publicApi(req: NextRequest) {
 
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
-  const isProtectedPath = path.startsWith('/student/') || path.startsWith('/mentor/') || path.startsWith('/admin/');
   const isProtectedApi = path.startsWith('/api/') && !publicApi(req);
 
-  // Allow public pages
+  // Allow public pages and public API reads
   if (publicPages.test(path) || publicApi(req)) {
     return NextResponse.next();
   }
 
-  // Check authentication for protected paths
+  // Check authentication for everything else
   const session = await getSession();
   if (!session.user) {
     if (isProtectedApi) {
@@ -31,7 +38,6 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/login', req.url));
   }
 
-  // User is authenticated, allow access
   return NextResponse.next();
 }
 

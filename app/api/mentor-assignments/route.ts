@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/db';
 import { MentorAssignmentModel } from '@/models/MentorAssignment';
-import { requireAdmin, requireMentor, toErrorResponse } from '@/lib/permissions';
+import { requireAdmin, requireAuth, toErrorResponse } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await requireAdmin();
+    const user = await requireAuth();
     await dbConnect();
 
     const { searchParams } = new URL(req.url);
@@ -16,8 +16,23 @@ export async function GET(req: NextRequest) {
     const batchId = searchParams.get('batchId');
 
     const query: Record<string, unknown> = { active: true };
-    if (mentorId) query.mentorId = mentorId;
-    if (studentId) query.studentId = studentId;
+
+    if (user.role === 'ADMIN') {
+      // Admins may filter freely.
+      if (mentorId) query.mentorId = mentorId;
+      if (studentId) query.studentId = studentId;
+    } else if (user.role === 'MENTOR') {
+      // Mentors may only ever see their own assignments. Ignore any
+      // mentorId/studentId supplied by the client and pin to the
+      // authenticated mentor's own id, so one mentor can't read another
+      // mentor's roster by changing the query string.
+      query.mentorId = user._id;
+      if (studentId) query.studentId = studentId;
+    } else {
+      // Students (or any other role) may not browse assignment records.
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     if (batchId) query.batchId = batchId;
 
     const assignments = await MentorAssignmentModel.find(query)

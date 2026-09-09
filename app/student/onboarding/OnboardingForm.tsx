@@ -9,11 +9,6 @@ type Branch = {
   name: string;
 };
 
-type Program = {
-  value: string;
-  label: string;
-};
-
 const OTHERS = '__OTHERS__';
 
 const currentYear = new Date().getFullYear();
@@ -82,21 +77,6 @@ const vtuBranches = [
   'Textile Technology',
 ];
 
-const programs: Program[] = [
-  {
-    value: 'tech-foundations',
-    label: 'Tech Foundations',
-  },
-  {
-    value: 'full-stack-development',
-    label: 'Full Stack Development',
-  },
-  {
-    value: 'ai-ml',
-    label: 'AI + Machine Learning',
-  },
-];
-
 const semesters = [
   { value: '1', label: '1st Semester' },
   { value: '2', label: '2nd Semester' },
@@ -107,45 +87,6 @@ const semesters = [
   { value: '7', label: '7th Semester' },
   { value: '8', label: '8th Semester' },
 ];
-
-const tracksByProgram: Record<string, Program[]> = {
-  'tech-foundations': [
-    {
-      value: 'core-programming',
-      label: 'Core Programming & CS Fundamentals',
-    },
-    {
-      value: 'dsa',
-      label: 'DSA & Problem Solving',
-    },
-  ],
-
-  'full-stack-development': [
-    {
-      value: 'mern',
-      label: 'MERN Stack',
-    },
-    {
-      value: 'java-full-stack',
-      label: 'Java Full Stack',
-    },
-  ],
-
-  'ai-ml': [
-    {
-      value: 'machine-learning',
-      label: 'Machine Learning',
-    },
-    {
-      value: 'ai-engineering',
-      label: 'AI Engineering',
-    },
-    {
-      value: 'ai-ml-advanced',
-      label: 'AI + ML Advanced',
-    },
-  ],
-};
 
 // `collegeName`, `branchName` and `graduationYear` each have their own
 // dedicated block below (dropdown, some with an "Others" fallback), so
@@ -212,23 +153,46 @@ function SectionHeading({ title, subtitle }: { title: string; subtitle?: string 
   );
 }
 
+type InitialValues = Partial<{
+  phone: string;
+  usn: string;
+  collegeName: string;
+  branchName: string;
+  graduationYear: string;
+  semester: string;
+  githubUrl: string;
+  linkedinUrl: string;
+  portfolioUrl: string;
+  skills: string;
+}>;
+
 export default function OnboardingForm({
   initialName,
+  initialValues,
+  isEditing = false,
 }: {
   initialName: string;
+  initialValues?: InitialValues;
+  isEditing?: boolean;
 }) {
   const router = useRouter();
 
   const [values, setValues] = useState<Record<string, string>>({
     fullName: initialName,
+    ...initialValues,
   });
 
   const [branches, setBranches] = useState<Branch[]>([]);
   const [error, setError] = useState('');
+  const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [collegeIsOther, setCollegeIsOther] = useState(false);
-  const [branchIsOther, setBranchIsOther] = useState(false);
+  const [collegeIsOther, setCollegeIsOther] = useState(
+    () => Boolean(initialValues?.collegeName) && !vtuColleges.includes(initialValues!.collegeName as string)
+  );
+  const [branchIsOther, setBranchIsOther] = useState(
+    () => Boolean(initialValues?.branchName) && !vtuBranches.includes(initialValues!.branchName as string)
+  );
 
   const selectedGradYear = values.graduationYear
     ? Number(values.graduationYear)
@@ -276,15 +240,6 @@ export default function OnboardingForm({
       ...current,
       [key]: value,
     }));
-
-    // Reset track when program changes
-    if (key === 'preferredProgram') {
-      setValues((current) => ({
-        ...current,
-        preferredProgram: value,
-        preferredTrack: '',
-      }));
-    }
   };
 
   const handleCollegeSelect = (value: string) => {
@@ -315,14 +270,12 @@ export default function OnboardingForm({
     }
   };
 
-  const availableTracks =
-    tracksByProgram[values.preferredProgram] || [];
-
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setSaving(true);
     setError('');
+    setSaved(false);
 
     if (!values.collegeName?.trim()) {
       setError('Please select or enter your college.');
@@ -344,18 +297,6 @@ export default function OnboardingForm({
 
     if (showSemester && !values.semester) {
       setError('Please select your current semester.');
-      setSaving(false);
-      return;
-    }
-
-    if (!values.preferredProgram) {
-      setError('Please select your preferred internship program.');
-      setSaving(false);
-      return;
-    }
-
-    if (!values.preferredTrack) {
-      setError('Please select your preferred track.');
       setSaving(false);
       return;
     }
@@ -392,8 +333,13 @@ export default function OnboardingForm({
         throw new Error('Unable to save profile');
       }
 
-      router.push('/dashboard');
-      router.refresh();
+      if (isEditing) {
+        setSaved(true);
+        setSaving(false);
+      } else {
+        router.push('/internships');
+        router.refresh();
+      }
     } catch {
       setError(
         'Unable to save your profile. Please try again.'
@@ -563,55 +509,6 @@ export default function OnboardingForm({
         <div className="hidden md:block" aria-hidden="true" />
       )}
 
-      <SectionHeading title="Program Preferences" />
-
-      {/* Internship Program */}
-      <label className="grid gap-2 text-sm text-[#A99CAA]">
-        <span>
-          Preferred Internship Program
-          <span className="ml-1 text-[#A33B87]">*</span>
-        </span>
-
-        <Select
-          required
-          value={values.preferredProgram || ''}
-          onChange={(value) => update('preferredProgram', value)}
-        >
-          <option value="">Select internship program</option>
-
-          {programs.map((program) => (
-            <option key={program.value} value={program.value}>
-              {program.label}
-            </option>
-          ))}
-        </Select>
-      </label>
-
-      {/* Track */}
-      <label className="grid gap-2 text-sm text-[#A99CAA]">
-        <span>
-          Preferred Track
-          <span className="ml-1 text-[#A33B87]">*</span>
-        </span>
-
-        <Select
-          required
-          disabled={!values.preferredProgram}
-          value={values.preferredTrack || ''}
-          onChange={(value) => update('preferredTrack', value)}
-        >
-          <option value="">
-            {!values.preferredProgram ? 'Select a program first' : 'Select track'}
-          </option>
-
-          {availableTracks.map((track) => (
-            <option key={track.value} value={track.value}>
-              {track.label}
-            </option>
-          ))}
-        </Select>
-      </label>
-
       <SectionHeading title="Links & Skills" subtitle="Optional, but recommended." />
 
       {fields.slice(2).map(([key, label]) => (
@@ -642,6 +539,23 @@ export default function OnboardingForm({
         </span>
       </label>
 
+      {/* Saved confirmation (edit mode only) */}
+      {saved && (
+        <div
+          className="
+            rounded-xl
+            border border-emerald-900/50
+            bg-emerald-950/30
+            px-4 py-3
+            text-sm
+            text-emerald-300
+            md:col-span-2
+          "
+        >
+          Profile updated.
+        </div>
+      )}
+
       {/* Error */}
       {error && (
         <div
@@ -671,7 +585,13 @@ export default function OnboardingForm({
             md:w-auto
           "
         >
-          {saving ? 'Saving your profile...' : 'Complete profile'}
+          {saving
+            ? isEditing
+              ? 'Saving…'
+              : 'Saving your profile...'
+            : isEditing
+              ? 'Save changes'
+              : 'Complete profile'}
         </button>
       </div>
     </form>

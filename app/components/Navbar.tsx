@@ -9,9 +9,15 @@ type Role = 'STUDENT' | 'MENTOR' | 'ADMIN';
 type AppUser = { role: Role; profileImage?: string; fullName?: string };
 const publicLinks = [['Home', '/'], ['Programs', '/courses'], ['Internships', '/internships'], ['About', '/about'], ['Contact', '/contact']];
 const roleLinks: Record<Role, string[][]> = {
-  STUDENT: [['Dashboard', '/dashboard'], ['Learn', '/courses'], ['Internship', '/internships'], ['Challenges', '/courses'], ['Projects', '/courses'], ['Leaderboard', '/courses'], ['Achievements', '/courses'], ['Profile', '/student/onboarding']],
+  STUDENT: [
+    ['Dashboard', '/dashboard'],
+    ['Programs', '/internships'],
+    ['My Internship', '/student/internship'],
+    ['Courses', '/courses'],
+    ['Profile', '/student/onboarding'],
+  ],
   MENTOR: [['Dashboard', '/dashboard'], ['Students', '/mentor/students'], ['Assignments', '/mentor/assignments'], ['Projects', '/mentor/projects'], ['Evaluations', '/mentor/evaluations'], ['Profile', '/mentor/profile']],
-  ADMIN: [['Dashboard', '/dashboard/admin'], ['Students', '/admin'], ['Mentors', '/admin'], ['Programs', '/courses'], ['Batches', '/dashboard/admin#batches'], ['Courses', '/courses'], ['Projects', '/dashboard/admin#projects'], ['Certificates', '/dashboard/admin'], ['Analytics', '/dashboard/admin'], ['Settings', '/dashboard/admin#settings']],
+  ADMIN: [['Dashboard', '/dashboard/admin'], ['Students', '/admin'], ['Mentors', '/admin'], ['Programs', '/courses'], ['Batches', '/admin/batches'], ['Courses', '/courses'], ['Projects', '/dashboard/admin#projects'], ['Certificates', '/dashboard/admin'], ['Analytics', '/dashboard/admin'], ['Settings', '/dashboard/admin#settings']],
 };
 
 export default function Navbar() {
