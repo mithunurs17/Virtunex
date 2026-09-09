@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import Navbar from '../../components/Navbar';
+import Footer from '../../components/Footer';
 
 interface Program {
   _id: string;
@@ -16,10 +19,14 @@ interface Program {
   learningOutcomes: string[];
 }
 
-interface User {
+interface StudentProfile {
+  userId: string;
+  onboardingCompleted?: boolean;
+}
+
+interface ExistingEnrollment {
   _id: string;
-  fullName: string;
-  email: string;
+  status: string;
 }
 
 export default function ProgramDetailPage() {
@@ -28,7 +35,9 @@ export default function ProgramDetailPage() {
   const programId = params.programId;
 
   const [program, setProgram] = useState<Program | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [signedIn, setSignedIn] = useState(false);
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
+  const [existingEnrollment, setExistingEnrollment] = useState<ExistingEnrollment | null>(null);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,22 +46,24 @@ export default function ProgramDetailPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load program
         const progRes = await fetch(`/api/programs/${programId}`);
         if (!progRes.ok) throw new Error('Program not found');
         const progData = await progRes.json();
         setProgram(progData.result);
 
-        // Check user authentication
-        const userRes = await fetch('/api/students/me');
-        if (userRes.ok) {
-          const profileData = await userRes.json();
+        const profileRes = await fetch('/api/students/me');
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
           if (profileData.profile?.userId) {
-            // Get user details
-            const meRes = await fetch('/api/users/me');
-            if (meRes.ok) {
-              const meData = await meRes.json();
-              setUser(meData.user);
+            setSignedIn(true);
+            setProfile(profileData.profile);
+
+            const enrollRes = await fetch(
+              `/api/enrollments?programId=${programId}`
+            );
+            if (enrollRes.ok) {
+              const enrollData = await enrollRes.json();
+              if (enrollData.result?.length) setExistingEnrollment(enrollData.result[0]);
             }
           }
         }
@@ -67,31 +78,26 @@ export default function ProgramDetailPage() {
   }, [programId]);
 
   const handleApply = async () => {
-    if (!user || !program) return;
+    if (!program) return;
 
     setApplying(true);
+    setError(null);
     try {
-      const studentRes = await fetch('/api/students/me');
-      const studentData = await studentRes.json();
-
       const res = await fetch('/api/enrollments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          studentId: studentData.profile?.userId,
-          programId: program._id,
-        }),
+        body: JSON.stringify({ programId: program._id }),
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to apply');
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || 'Failed to apply');
       }
 
       setSuccess(true);
       setTimeout(() => {
         router.push('/student/internship');
-      }, 2000);
+      }, 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to apply');
     } finally {
@@ -101,8 +107,9 @@ export default function ProgramDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background text-text p-6">
-        <div className="max-w-4xl mx-auto">
+      <div className="min-h-screen bg-background text-text">
+        <Navbar />
+        <div className="max-w-4xl mx-auto p-6 pt-28">
           <p className="text-muted">Loading program...</p>
         </div>
       </div>
@@ -111,8 +118,9 @@ export default function ProgramDetailPage() {
 
   if (!program) {
     return (
-      <div className="min-h-screen bg-background text-text p-6">
-        <div className="max-w-4xl mx-auto">
+      <div className="min-h-screen bg-background text-text">
+        <Navbar />
+        <div className="max-w-4xl mx-auto p-6 pt-28">
           <p className="text-red-400">{error || 'Program not found'}</p>
         </div>
       </div>
@@ -120,14 +128,12 @@ export default function ProgramDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-text p-6">
-      <div className="max-w-4xl mx-auto">
-        <button
-          onClick={() => window.history.back()}
-          className="text-muted hover:text-foreground transition mb-6"
-        >
-          ← Back
-        </button>
+    <div className="min-h-screen bg-background text-text">
+      <Navbar />
+      <div className="max-w-4xl mx-auto p-6 pt-28 pb-20">
+        <Link href="/internships" className="text-muted hover:text-foreground transition mb-6 inline-block">
+          ← All programs
+        </Link>
 
         {/* Hero */}
         <div className="bg-gradient-to-br from-jamoon/20 to-jamoon-bright/10 rounded-3xl p-8 border border-border mb-8">
@@ -214,7 +220,7 @@ export default function ProgramDetailPage() {
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-surface rounded-2xl p-6 border border-border sticky top-6">
+            <div className="bg-surface rounded-2xl p-6 border border-border sticky top-24">
               {success && (
                 <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
                   <p className="text-green-400 text-sm">✓ Application submitted! Redirecting...</p>
@@ -227,15 +233,39 @@ export default function ProgramDetailPage() {
                 </div>
               )}
 
-              {!user ? (
+              {!signedIn ? (
                 <div>
                   <p className="text-muted mb-4">Sign in to apply for this internship program.</p>
-                  <a
+                  <Link
                     href="/login"
                     className="block w-full px-4 py-3 bg-jamoon hover:bg-jamoon-bright text-foreground rounded-xl transition text-center font-medium"
                   >
                     Sign In
-                  </a>
+                  </Link>
+                </div>
+              ) : !profile?.onboardingCompleted ? (
+                <div>
+                  <p className="text-foreground font-medium mb-2">Complete your profile first</p>
+                  <p className="text-muted text-sm mb-4">
+                    We need a few academic details before you can apply.
+                  </p>
+                  <Link
+                    href="/student/onboarding"
+                    className="block w-full px-4 py-3 bg-jamoon hover:bg-jamoon-bright text-foreground rounded-xl transition text-center font-medium"
+                  >
+                    Complete profile
+                  </Link>
+                </div>
+              ) : existingEnrollment ? (
+                <div>
+                  <p className="text-foreground font-medium mb-2">You&apos;ve already applied</p>
+                  <p className="text-muted text-sm mb-4">Status: {existingEnrollment.status}</p>
+                  <Link
+                    href="/student/internship"
+                    className="block w-full px-4 py-3 bg-jamoon hover:bg-jamoon-bright text-foreground rounded-xl transition text-center font-medium"
+                  >
+                    View my internship
+                  </Link>
                 </div>
               ) : (
                 <div>
@@ -253,6 +283,7 @@ export default function ProgramDetailPage() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
